@@ -2,13 +2,17 @@
 
 namespace Vyuldashev\NovaPermission;
 
+use Gate;
 use Laravel\Nova\Nova;
 use Laravel\Nova\Tool;
 
 class NovaPermissionTool extends Tool
 {
-    public $roleResource = Role::class;
-    public $permissionResource = Permission::class;
+    public string $roleResource = Role::class;
+    public string $permissionResource = Permission::class;
+
+    public string $rolePolicy = RolePolicy::class;
+    public string $permissionPolicy = PermissionPolicy::class;
 
     /**
      * Perform any tasks that need to happen when the tool is booted.
@@ -21,29 +25,36 @@ class NovaPermissionTool extends Tool
             $this->roleResource,
             $this->permissionResource,
         ]);
+
+        Gate::policy(config('permission.models.permission'), $this->permissionPolicy);
+        Gate::policy(config('permission.models.role'), $this->rolePolicy);
     }
 
-    public function roleResource(string $roleResource)
+    public function roleResource(string $roleResource): NovaPermissionTool
     {
         $this->roleResource = $roleResource;
 
         return $this;
     }
 
-    public function permissionResource(string $permissionResource)
+    public function permissionResource(string $permissionResource): NovaPermissionTool
     {
         $this->permissionResource = $permissionResource;
 
         return $this;
     }
 
-    /**
-     * Build the view that renders the navigation links for the tool.
-     *
-     * @return \Illuminate\View\View
-     */
-    public function renderNavigation()
+    public function rolePolicy(string $rolePolicy): NovaPermissionTool
     {
-        return view('nova-permission-tool::navigation');
+        $this->rolePolicy = $rolePolicy;
+
+        return $this;
+    }
+
+    public function permissionPolicy(string $permissionPolicy)
+    {
+        $this->permissionPolicy = $permissionPolicy;
+
+        return $this;
     }
 }

@@ -3,13 +3,11 @@
 namespace Vyuldashev\NovaPermission;
 
 use Illuminate\Bus\Queueable;
-use Laravel\Nova\Actions\Action;
-use Illuminate\Support\Collection;
-use Laravel\Nova\Fields\ActionFields;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Contracts\Queue\ShouldQueue;
-
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Collection;
+use Laravel\Nova\Actions\Action;
+use Laravel\Nova\Fields\ActionFields;
 use Laravel\Nova\Fields\Select;
 
 class AttachToRole extends Action
@@ -19,8 +17,8 @@ class AttachToRole extends Action
     /**
      * Perform the action on the given models.
      *
-     * @param  \Laravel\Nova\Fields\ActionFields  $fields
-     * @param  \Illuminate\Support\Collection  $models
+     * @param ActionFields $fields
+     * @param Collection $models
      * @return mixed
      */
     public function handle(ActionFields $fields, Collection $models)
@@ -28,7 +26,7 @@ class AttachToRole extends Action
         $role = Role::getModel()->find($fields['role']);
         foreach ($models as $model) {
             $role->givePermissionTo($model);
-        }   
+        }
     }
 
     /**
@@ -39,7 +37,7 @@ class AttachToRole extends Action
     public function fields()
     {
         return [
-            Select::make('Role')->options(Role::getModel()->get()->pluck('name','id'))->displayUsingLabels()
+            Select::make('Role')->options(Role::getModel()->get()->pluck('name', 'id')->toArray())->displayUsingLabels(),
         ];
     }
 }

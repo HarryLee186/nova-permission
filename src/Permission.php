@@ -2,16 +2,16 @@
 
 namespace Vyuldashev\NovaPermission;
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
+use Laravel\Nova\Fields\DateTime;
+use Laravel\Nova\Fields\ID;
+use Laravel\Nova\Fields\MorphToMany;
+use Laravel\Nova\Fields\Select;
+use Laravel\Nova\Fields\Text;
 use Laravel\Nova\Nova;
 use Laravel\Nova\Resource;
-use Laravel\Nova\Fields\ID;
-use Illuminate\Http\Request;
-use Laravel\Nova\Fields\Text;
-use Illuminate\Validation\Rule;
-use Laravel\Nova\Fields\Select;
-use Laravel\Nova\Fields\DateTime;
-use Laravel\Nova\Fields\MorphToMany;
-use Laravel\Nova\Fields\BelongsToMany;
 use Spatie\Permission\PermissionRegistrar;
 
 class Permission extends Resource
@@ -39,11 +39,30 @@ class Permission extends Resource
         'name',
     ];
 
-    public static $displayInNavigation = false;
-
     public static function getModel()
     {
         return app(PermissionRegistrar::class)->getPermissionClass();
+    }
+
+    /**
+     * Get the logical group associated with the resource.
+     *
+     * @return string
+     */
+    public static function group(): string
+    {
+        return __('nova-permission-tool::navigation.sidebar-label');
+    }
+
+    /**
+     * Determine if this resource is available for navigation.
+     *
+     * @param Request $request
+     * @return bool
+     */
+    public static function availableForNavigation(Request $request): bool
+    {
+        return Gate::allows('viewAny', app(PermissionRegistrar::class)->getPermissionClass());
     }
 
     public static function label()
@@ -59,17 +78,16 @@ class Permission extends Resource
     /**
      * Get the fields displayed by the resource.
      *
-     * @param  \Illuminate\Http\Request $request
+     * @param Request $request
      * @return array
      */
-    public function fields(Request $request)
+    public function fields(Request $request): array
     {
         $guardOptions = collect(config('auth.guards'))->mapWithKeys(function ($value, $key) {
             return [$key => $key];
         });
 
         $userResource = Nova::resourceForModel(getModelForGuard($this->guard_name));
-        $roleResource = Nova::resourceForModel(Role::getModel());
 
         return [
             ID::make()->sortable(),
@@ -92,9 +110,8 @@ class Permission extends Resource
             DateTime::make(__('nova-permission-tool::permissions.created_at'), 'created_at')->exceptOnForms(),
             DateTime::make(__('nova-permission-tool::permissions.updated_at'), 'updated_at')->exceptOnForms(),
 
-            BelongsToMany::make($roleResource::label(), 'roles', $roleResource)
-                ->searchable()
-                ->singularLabel($roleResource::singularLabel()),
+            RoleBooleanGroup::make(__('nova-permission-tool::permissions.roles'), 'roles'),
+
             MorphToMany::make($userResource::label(), 'users', $userResource)
                 ->searchable()
                 ->singularLabel($userResource::singularLabel()),
@@ -104,10 +121,10 @@ class Permission extends Resource
     /**
      * Get the cards available for the request.
      *
-     * @param  \Illuminate\Http\Request $request
+     * @param Request $request
      * @return array
      */
-    public function cards(Request $request)
+    public function cards(Request $request): array
     {
         return [];
     }
@@ -115,10 +132,10 @@ class Permission extends Resource
     /**
      * Get the filters available for the resource.
      *
-     * @param  \Illuminate\Http\Request $request
+     * @param Request $request
      * @return array
      */
-    public function filters(Request $request)
+    public function filters(Request $request): array
     {
         return [];
     }
@@ -126,10 +143,10 @@ class Permission extends Resource
     /**
      * Get the lenses available for the resource.
      *
-     * @param  \Illuminate\Http\Request $request
+     * @param Request $request
      * @return array
      */
-    public function lenses(Request $request)
+    public function lenses(Request $request): array
     {
         return [];
     }
@@ -137,10 +154,10 @@ class Permission extends Resource
     /**
      * Get the actions available for the resource.
      *
-     * @param  \Illuminate\Http\Request $request
+     * @param Request $request
      * @return array
      */
-    public function actions(Request $request)
+    public function actions(Request $request): array
     {
         return [
             new AttachToRole,

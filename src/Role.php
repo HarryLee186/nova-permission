@@ -2,16 +2,16 @@
 
 namespace Vyuldashev\NovaPermission;
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
+use Laravel\Nova\Fields\DateTime;
+use Laravel\Nova\Fields\ID;
+use Laravel\Nova\Fields\MorphToMany;
+use Laravel\Nova\Fields\Select;
+use Laravel\Nova\Fields\Text;
 use Laravel\Nova\Nova;
 use Laravel\Nova\Resource;
-use Laravel\Nova\Fields\ID;
-use Illuminate\Http\Request;
-use Laravel\Nova\Fields\Text;
-use Illuminate\Validation\Rule;
-use Laravel\Nova\Fields\Select;
-use Laravel\Nova\Fields\DateTime;
-use Laravel\Nova\Fields\MorphToMany;
-use Laravel\Nova\Fields\BelongsToMany;
 use Spatie\Permission\PermissionRegistrar;
 
 class Role extends Resource
@@ -39,11 +39,30 @@ class Role extends Resource
         'name',
     ];
 
-    public static $displayInNavigation = false;
-
     public static function getModel()
     {
         return app(PermissionRegistrar::class)->getRoleClass();
+    }
+
+    /**
+     * Get the logical group associated with the resource.
+     *
+     * @return string
+     */
+    public static function group()
+    {
+        return __('nova-permission-tool::navigation.sidebar-label');
+    }
+
+    /**
+     * Determine if this resource is available for navigation.
+     *
+     * @param Request $request
+     * @return bool
+     */
+    public static function availableForNavigation(Request $request)
+    {
+        return Gate::allows('viewAny', app(PermissionRegistrar::class)->getRoleClass());
     }
 
     public static function label()
@@ -59,7 +78,7 @@ class Role extends Resource
     /**
      * Get the fields displayed by the resource.
      *
-     * @param  \Illuminate\Http\Request $request
+     * @param Request $request
      * @return array
      */
     public function fields(Request $request)
@@ -69,8 +88,6 @@ class Role extends Resource
         });
 
         $userResource = Nova::resourceForModel(getModelForGuard($this->guard_name));
-        $permissionResource = Nova::resourceForModel(Permission::getModel());
-
 
         return [
             ID::make()->sortable(),
@@ -87,10 +104,8 @@ class Role extends Resource
             DateTime::make(__('nova-permission-tool::roles.created_at'), 'created_at')->exceptOnForms(),
             DateTime::make(__('nova-permission-tool::roles.updated_at'), 'updated_at')->exceptOnForms(),
 
-            BelongsToMany::make($permissionResource::label(), 'permissions', $permissionResource)
-                ->searchable()
-                ->singularLabel($permissionResource::singularLabel()),
-            
+            PermissionBooleanGroup::make(__('nova-permission-tool::roles.permissions'), 'permissions'),
+
             MorphToMany::make($userResource::label(), 'users', $userResource)
                 ->searchable()
                 ->singularLabel($userResource::singularLabel()),
@@ -100,7 +115,7 @@ class Role extends Resource
     /**
      * Get the cards available for the request.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param Request $request
      * @return array
      */
     public function cards(Request $request)
@@ -111,7 +126,7 @@ class Role extends Resource
     /**
      * Get the filters available for the resource.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param Request $request
      * @return array
      */
     public function filters(Request $request)
@@ -122,7 +137,7 @@ class Role extends Resource
     /**
      * Get the lenses available for the resource.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param Request $request
      * @return array
      */
     public function lenses(Request $request)
@@ -133,7 +148,7 @@ class Role extends Resource
     /**
      * Get the actions available for the resource.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param Request $request
      * @return array
      */
     public function actions(Request $request)
